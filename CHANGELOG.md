@@ -13,5 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `insertInChunks(db, rows, (db, chunk) => query)` builds each chunk's query yourself, for upserts and `returning()`; the returned rows come back in input order and typed like drizzle's own.
 - `planChunks` returns the chunks without running anything, and `maxParams`, `maxSqlLength` and `maxRows` override the detected limits. A row too large to fit on its own throws `RowTooLargeError` before anything runs.
 - A `maxParams`, `maxSqlLength` or `maxRows` that isn't a positive whole number throws a `RangeError` naming the option, instead of a typo like `NaN` surfacing as drizzle's `values() must be called with at least one value`.
+- Limits are detected for node-postgres, postgres.js, mysql2 and node:sqlite as well, and each is tested against a real server. postgres.js gets 65,533 parameters, not Postgres's 65,535, because it refuses 65,534 or more before sending.
 
 [Unreleased]: https://github.com/RagedPanda/drizzle-chunked-insert/commits/main
