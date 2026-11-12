@@ -51,12 +51,18 @@ export function fits(size: ChunkSize, limits: ChunkLimits): boolean {
 }
 
 /**
- * The first guess at rows per chunk: one parameter per column per row. Plain values never take
- * more, and every chunk is checked against its compiled size anyway.
+ * The first guess at rows per chunk, from what one row costs and what every statement costs on top
+ * (an upsert's `set` clause, say). Every chunk is checked against its compiled size anyway.
  */
-export function initialChunkRows(columnCount: number, limits: ChunkLimits): number {
-	const byParams = Math.floor(limits.maxParams / Math.max(columnCount, 1));
+export function initialChunkRows(rowParams: number, limits: ChunkLimits, statementParams = 0): number {
+	const byParams = Math.floor((limits.maxParams - statementParams) / Math.max(rowParams, 1));
 	return Math.max(1, Math.min(byParams, limits.maxRows ?? Number.POSITIVE_INFINITY));
+}
+
+/** Splits the measured sizes of a one-row and a two-row chunk into per-row and per-statement parameters. */
+export function sampleCosts(oneRow: ChunkSize, twoRows: ChunkSize | undefined): {rowParams: number; statementParams: number} {
+	const rowParams = twoRows === undefined ? oneRow.params : twoRows.params - oneRow.params;
+	return {rowParams, statementParams: oneRow.params - rowParams};
 }
 
 /**
