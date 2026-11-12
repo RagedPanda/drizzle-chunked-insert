@@ -46,6 +46,17 @@ function describeLimits(limits: ChunkLimits): string {
 		: `${limits.maxParams} parameters or ${limits.maxSqlLength} bytes`;
 }
 
+/** Throws a `RangeError` unless every limit is a positive whole number, so a typo can't turn into odd chunks. */
+export function validateLimits<TLimits extends Partial<ChunkLimits>>(limits: TLimits): TLimits {
+	for (const [name, value] of Object.entries(limits)) {
+		if (!(Number.isSafeInteger(value) && value > 0)) {
+			throw new RangeError(`${name} must be a positive whole number, got ${value}.`);
+		}
+	}
+
+	return limits;
+}
+
 export function fits(size: ChunkSize, limits: ChunkLimits): boolean {
 	return size.params <= limits.maxParams && (limits.maxSqlLength === undefined || size.sqlLength <= limits.maxSqlLength);
 }
@@ -62,7 +73,8 @@ export function initialChunkRows(rowParams: number, limits: ChunkLimits, stateme
 /** Splits the measured sizes of a one-row and a two-row chunk into per-row and per-statement parameters. */
 export function sampleCosts(oneRow: ChunkSize, twoRows: ChunkSize | undefined): {rowParams: number; statementParams: number} {
 	const rowParams = twoRows === undefined ? oneRow.params : twoRows.params - oneRow.params;
-	return {rowParams, statementParams: oneRow.params - rowParams};
+	// Rows of different shapes can make the second row cost more than the first; never below zero.
+	return {rowParams, statementParams: Math.max(0, oneRow.params - rowParams)};
 }
 
 /**

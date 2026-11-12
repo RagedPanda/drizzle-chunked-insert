@@ -1,6 +1,6 @@
 import type {Table} from 'drizzle-orm';
 import {chooseRunMode, driverProfile} from './limits.ts';
-import {type ChunkLimits, initialChunkRows, planRanges, sampleCosts} from './plan.ts';
+import {type ChunkLimits, initialChunkRows, planRanges, sampleCosts, validateLimits} from './plan.ts';
 import {type BuildChunk, type ChunkQuery, hasReturning, isTransaction, measureChunks, readTraits, runChunks} from './run.ts';
 
 export {ChunkedInsertError, type BuildChunk, type ChunkQuery} from './run.ts';
@@ -48,11 +48,11 @@ interface Plan<TRow> {
 }
 
 function plan<TDb, TRow, TQuery extends ChunkQuery>(db: TDb, rows: readonly TRow[], build: BuildChunk<TDb, TRow, TQuery>, options: ChunkOptions): Plan<TRow> {
+	const {limits} = driverProfile(readTraits(db), validateLimits(limitOverrides(options)));
 	if (rows.length === 0) {
 		return {chunks: [], ranges: [], returning: false};
 	}
 
-	const {limits} = driverProfile(readTraits(db), limitOverrides(options));
 	const measure = measureChunks(db, rows, build);
 	const {rowParams, statementParams} = sampleCosts(measure(0, 1), rows.length > 1 ? measure(0, 2) : undefined);
 	const ranges = planRanges(rows.length, initialChunkRows(rowParams, limits, statementParams), measure, limits);
