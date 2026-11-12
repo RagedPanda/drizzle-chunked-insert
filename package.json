@@ -34,6 +34,7 @@
 	"scripts": {
 		"build": "node -e \"fs.rmSync('dist', {recursive: true, force: true})\" && tsc -p tsconfig.esm.json && tsc -p tsconfig.cjs.json && node scripts/mark-cjs.ts",
 		"typecheck": "tsc --noEmit",
+		"bench": "node bench/insert.bench.ts",
 		"test": "node --test \"test/**/*.test.ts\"",
 		"coverage": "node --test --experimental-test-coverage --test-coverage-exclude=\"test/**\" --test-coverage-exclude=\"scripts/**\" --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 \"test/**/*.test.ts\"",
 		"prepublishOnly": "npm run typecheck && npm test && npm run build"
