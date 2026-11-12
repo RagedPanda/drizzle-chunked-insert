@@ -151,3 +151,22 @@ test('a row that needs exactly maxParams parameters fits on its own', async t =>
 	t.after(() => db.$client.close());
 	assert.deepEqual(planChunks(db, notes, [{id: 1, body: 'a'}, {id: 2, body: 'b'}], {maxParams: 3}).map(chunk => chunk.length), [1, 1]);
 });
+
+test('a counted plan the first rows contradict falls back to measuring every chunk', async t => {
+	const db = betterSqlite();
+	t.after(() => db.$client.close());
+	// $defaultFn returning `sql` binds two parameters where counting assumes one.
+	const tagged = sqliteTable('notes', {id: integer('id').primaryKey(), body: text('body'), tag: text('tag').$defaultFn(() => sql`${'a'} || ${'b'}` as unknown as string)});
+	const rows = Array.from({length: 10}, (_, id) => ({id}));
+	assert.deepEqual(planChunks(db, tagged, rows, {maxParams: 9}).map(chunk => chunk.length), [3, 3, 3, 1]);
+	await insertInChunks(db, tagged, rows, {maxParams: 9});
+	assert.deepEqual(db.select({total: count()}).from(notes).all(), [{total: 10}]);
+});
+
+test('a table insert with sql values is planned by measuring', async t => {
+	const db = betterSqlite();
+	t.after(() => db.$client.close());
+	// Each row binds four: the id, two in `body` and the $defaultFn tag.
+	const rows = Array.from({length: 10}, (_, id) => ({id, body: sql`${'x'} || ${String(id)}` as unknown as string}));
+	assert.deepEqual(planChunks(db, notes, rows, {maxParams: 9}).map(chunk => chunk.length), [2, 2, 2, 2, 2]);
+});
