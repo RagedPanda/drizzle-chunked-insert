@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {chooseRunMode, cloudflareLimits, conservativeLimits, driverProfile, mysqlLimits, postgresLimits, sqliteLimits} from '../src/limits.ts';
+import {chooseRunMode, cloudflareLimits, conservativeLimits, driverProfile, mysqlLimits, postgresJsLimits, postgresLimits, sqliteLimits} from '../src/limits.ts';
 
 const traits = (sessionKinds: string[], databaseKinds: string[] = [], synchronous = false) => ({sessionKinds, databaseKinds, synchronous});
 
@@ -11,6 +11,7 @@ test('each driver gets its measured limits and atomic strategy', () => {
 	assert.deepEqual(driverProfile(traits(['LibSQLSession', 'SQLiteSession'])), {limits: sqliteLimits, strategy: 'batch'});
 	assert.deepEqual(driverProfile(traits(['SQLJsSession', 'SQLiteAsyncSession', 'SQLiteSession'], ['NodeSQLiteDatabase'], true)), {limits: sqliteLimits, strategy: 'sync-transaction'});
 	assert.deepEqual(driverProfile(traits(['NodePgSession', 'PgSession'])), {limits: postgresLimits, strategy: 'transaction'});
+	assert.deepEqual(driverProfile(traits(['PostgresJsSession', 'PgSession'])), {limits: postgresJsLimits, strategy: 'transaction'});
 	assert.deepEqual(driverProfile(traits(['NeonHttpSession', 'PgSession'])), {limits: postgresLimits, strategy: 'batch'});
 	assert.deepEqual(driverProfile(traits(['MySql2Session', 'MySqlSession'])), {limits: mysqlLimits, strategy: 'transaction'});
 });
