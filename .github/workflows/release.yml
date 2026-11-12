@@ -24,9 +24,8 @@ jobs:
       - name: Read the release notes from CHANGELOG.md
         run: node scripts/release-notes.ts "${GITHUB_REF_NAME#v}" > "$RUNNER_TEMP/release-notes.md"
       - run: npm ci --ignore-scripts
-      # Uses npm trusted publishing (OIDC) once it is set up on npmjs.com, which npm only allows after the
-      # first publish; until then the NPM_TOKEN secret publishes. A version already on npm is skipped, so a
-      # tag for a version published by hand, or a re-run, still creates the GitHub release.
+      # Uses npm trusted publishing (OIDC), so no token is stored anywhere. A version already on npm is
+      # skipped, so a tag for a version published by hand, or a re-run, still creates the GitHub release.
       - name: Publish to npm
         run: |
           if npm view "drizzle-chunked-insert@${GITHUB_REF_NAME#v}" version > /dev/null 2>&1; then
@@ -34,8 +33,16 @@ jobs:
           else
             npm publish --provenance --access public
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # npm can hold a publish for maintainer approval and still exit 0, so check the version is installable
+      # before announcing it. The registry takes a few seconds to show a new version.
+      - name: Check the version is on npm
+        run: |
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            npm view "drizzle-chunked-insert@${GITHUB_REF_NAME#v}" version --prefer-online > /dev/null 2>&1 && exit 0
+            sleep 10
+          done
+          echo "drizzle-chunked-insert@${GITHUB_REF_NAME#v} is not on npm after publishing. If npm staged it, approve it on npmjs.com, then re-run this job."
+          exit 1
       - name: Create the GitHub release
         run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/release-notes.md" --verify-tag
         env:

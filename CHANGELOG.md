@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Releases are published from GitHub Actions with npm trusted publishing, so no long-lived npm token exists that could publish a tampered version. Every version still carries a provenance attestation linking it to the commit it was built from ([#11](https://github.com/RagedPanda/drizzle-chunked-insert/pull/11) by [@RagedPanda](https://github.com/RagedPanda)).
+
 ## [0.1.0] - 2026-11-12
 
 ### Added
