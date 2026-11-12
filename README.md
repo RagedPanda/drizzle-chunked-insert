@@ -1,5 +1,12 @@
 # drizzle-chunked-insert
 
+[![npm version](https://img.shields.io/npm/v/drizzle-chunked-insert)](https://www.npmjs.com/package/drizzle-chunked-insert)
+[![CI](https://github.com/RagedPanda/drizzle-chunked-insert/actions/workflows/ci.yml/badge.svg)](https://github.com/RagedPanda/drizzle-chunked-insert/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/RagedPanda/drizzle-chunked-insert/actions/workflows/ci.yml)
+[![npm downloads](https://img.shields.io/npm/dm/drizzle-chunked-insert)](https://www.npmjs.com/package/drizzle-chunked-insert)
+[![types](https://img.shields.io/npm/types/drizzle-chunked-insert)](https://www.npmjs.com/package/drizzle-chunked-insert)
+[![drizzle-orm](https://img.shields.io/npm/dependency-version/drizzle-chunked-insert/peer/drizzle-orm)](https://orm.drizzle.team)
+
 Insert any number of rows with [Drizzle ORM](https://orm.drizzle.team) without hitting your database's bound-parameter limit. It splits the rows into the fewest statements each driver allows (Cloudflare D1, SQLite, Postgres, MySQL) and writes them all or none.
 
 ```ts
