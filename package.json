@@ -59,9 +59,13 @@
 		"@libsql/client": "^0.18.0",
 		"@types/better-sqlite3": "^9.6.0",
 		"@types/node": "^26.6.6",
+		"@types/pg": "^8.23.1",
 		"better-sqlite3": "^13.1.1",
 		"drizzle-orm": "0.45.4",
 		"miniflare": "^4.20260730.0",
+		"mysql2": "^3.24.6",
+		"pg": "^8.23.1",
+		"postgres": "^4.1.1",
 		"typescript": "^7.0.2"
 	}
 }

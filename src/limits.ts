@@ -26,6 +26,8 @@ export interface DriverTraits {
 export const cloudflareLimits: ChunkLimits = {maxParams: 100, maxSqlLength: 100_000};
 export const sqliteLimits: ChunkLimits = {maxParams: 32_766};
 export const postgresLimits: ChunkLimits = {maxParams: 65_535};
+/** postgres.js refuses 65,534 parameters or more before sending, below what the server allows. */
+export const postgresJsLimits: ChunkLimits = {maxParams: 65_533};
 export const mysqlLimits: ChunkLimits = {maxParams: 65_535};
 /** SQLite's limit before 3.32, for SQLite drivers whose bundled version isn't known. */
 export const conservativeLimits: ChunkLimits = {maxParams: 999};
@@ -64,6 +66,10 @@ export function driverLimits(traits: DriverTraits): ChunkLimits {
 
 	if (includesAny(traits.sessionKinds, measuredSqliteSessions)) {
 		return sqliteLimits;
+	}
+
+	if (traits.sessionKinds.includes('PostgresJsSession')) {
+		return postgresJsLimits;
 	}
 
 	return dialectLimits(traits.sessionKinds);
