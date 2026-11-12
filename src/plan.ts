@@ -115,3 +115,31 @@ export function planRanges(rowCount: number, initialRows: number, measure: Measu
 
 	return ranges;
 }
+
+/**
+ * Splits rows into consecutive chunks whose per-row parameter bounds add up to at most `maxParams`,
+ * without compiling anything. A row counts as at least one parameter, as in `initialChunkRows`.
+ * `undefined` when a row is over the limit on its own, so the measured plan can report it.
+ */
+export function planByParamBounds(bounds: readonly number[], limits: ChunkLimits): ChunkRange[] | undefined {
+	const ranges: ChunkRange[] = [];
+	const maxRows = limits.maxRows ?? Number.POSITIVE_INFINITY;
+	let start = 0;
+	let params = 0;
+	for (const [index, bound] of bounds.entries()) {
+		const cost = Math.max(bound, 1);
+		if (cost > limits.maxParams) {
+			return undefined;
+		}
+
+		if (params + cost > limits.maxParams || index - start === maxRows) {
+			ranges.push({start, end: index});
+			start = index;
+			params = 0;
+		}
+
+		params += cost;
+	}
+
+	return bounds.length === 0 ? ranges : [...ranges, {start, end: bounds.length}];
+}

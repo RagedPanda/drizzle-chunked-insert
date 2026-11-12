@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {type ChunkLimits, type ChunkRange, fits, initialChunkRows, planRanges, RowTooLargeError, sampleCosts, shrinkRows, validateLimits} from '../src/plan.ts';
+import {type ChunkLimits, type ChunkRange, fits, initialChunkRows, planByParamBounds, planRanges, RowTooLargeError, sampleCosts, shrinkRows, validateLimits} from '../src/plan.ts';
 
 // A small seeded generator, so a failing shape can be replayed from its seed.
 function randomGenerator(seed: number) {
@@ -137,4 +137,14 @@ test('limits must be positive whole numbers', () => {
 	for (const value of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 2 ** 53]) {
 		assert.throws(() => validateLimits({maxRows: value}), {name: 'RangeError', message: `maxRows must be a positive whole number, got ${value}.`});
 	}
+});
+
+test('counted parameters fill chunks up to maxParams and maxRows without measuring', () => {
+	const span = (ranges: ChunkRange[] | undefined) => ranges?.map(({start, end}) => [start, end]);
+	assert.deepEqual(span(planByParamBounds([2, 2, 2, 2, 2], {maxParams: 5})), [[0, 2], [2, 4], [4, 5]]);
+	assert.deepEqual(span(planByParamBounds([1, 1, 1, 1, 1], {maxParams: 10, maxRows: 2})), [[0, 2], [2, 4], [4, 5]]);
+	// A row that binds nothing still counts as one, so all-default rows can't make a chunk unbounded.
+	assert.deepEqual(span(planByParamBounds([0, 0, 0], {maxParams: 2})), [[0, 2], [2, 3]]);
+	assert.deepEqual(planByParamBounds([], {maxParams: 5}), []);
+	assert.equal(planByParamBounds([2, 6, 2], {maxParams: 5}), undefined);
 });
