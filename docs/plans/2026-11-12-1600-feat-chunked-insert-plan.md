@@ -62,9 +62,9 @@ The threads pass around workarounds like `for (const part of chunk(rows, 100)) a
 **API**
 
 - R1. `insertInChunks(db, table, rows)` inserts every row and resolves once all are written.
-- R2. An optional `modify` callback receives each chunk's insert builder, so upserts and returning work unchanged: `insertInChunks(db, users, rows, q => q.onConflictDoNothing().returning({id: users.id}))`. With `returning`, the result is every chunk's returned rows concatenated in input order, typed like Drizzle's own `returning()`.
+- R2. For upserts and returning, a second form takes a build callback that builds each chunk's query on the `db` it is handed (the transaction, when atomic): `insertInChunks(db, rows, (db, chunk) => db.insert(users).values(chunk).onConflictDoNothing().returning({id: users.id}))`. With `returning`, the result is every chunk's returned rows concatenated in input order, typed like Drizzle's own `returning()`. (Changed in U3: a `modify(q => ...)` callback can't be typed across versions, since `returning()` came back as `{[x: string]: unknown}[]`.)
 - R3. Options: `atomic` (default `true`); `maxParams` and `maxSqlLength` overrides; `maxRows` per chunk (an upper bound, for users who want smaller statements).
-- R4. `planChunks(db, table, rows, modify?, options?)` returns the chunks as arrays without running anything, for callers who batch the queries themselves.
+- R4. `planChunks(db, table, rows, options?)` and `planChunks(db, rows, build, options?)` return the chunks as arrays without running anything, for callers who batch the queries themselves.
 - R5. Zero rows is a no-op that returns `[]`, not Drizzle's "values() must be called with at least one value" error.
 
 **Correctness**
@@ -102,7 +102,7 @@ The threads pass around workarounds like `for (const part of chunk(rows, 100)) a
   - async transaction: everything else
   - An unknown driver falls back to its dialect's defaults, and `maxParams` overrides the limit.
   - U1 verifies the session class names on all three drizzle-orm versions.
-- **KTD4. A transaction is detected with `is(db, PgTransaction | MySqlTransaction | SQLiteTransaction)`.** On D1, `db.batch` needs the root `db`, so passing a `tx` on D1 throws a clear error. On D1 drizzle's `tx` isn't atomic anyway.
+- **KTD4. A transaction is detected structurally, by `typeof db.rollback === 'function'`.** drizzle 1.0 renamed the transaction classes, so `is()` checks don't work across versions. No D1 `tx` check is needed: drizzle's D1 `transaction()` already fails at `begin`.
 - **KTD5. Pure core, I/O at the edges.**
   - `src/plan.ts`: pure chunking over row costs and limits.
   - `src/limits.ts`: driver to limits and strategy.
@@ -125,7 +125,7 @@ Each unit is one PR with one logical commit, merged only after `gh pr checks N` 
   - The session `entityKind` names on 0.36, 0.45 and 1.0-rc.
   - Results go into `src/limits.ts` and the README.
 - **U2. `plan.ts`:** greedy chunking, split-on-overflow, R5 and R7. Property tests check that random row shapes never produce a chunk over the limit and keep the input order.
-- **U3. `limits.ts` + `run.ts` + `insertInChunks` / `planChunks`:** R1-R4 and R8-R10, with types that follow `modify`'s `returning()`.
+- **U3. `limits.ts` + `run.ts` + `insertInChunks` / `planChunks`:** R1-R4 and R8-R10, with types that follow the build callback's `returning()`.
 - **U4. Integration matrix:**
   - Drivers: better-sqlite3, libsql (file), node:sqlite, D1 (Miniflare), PGlite, node-postgres and postgres.js (CI service), mysql2 (CI service).
   - drizzle-orm: 0.36, 0.45 and 1.0-rc.

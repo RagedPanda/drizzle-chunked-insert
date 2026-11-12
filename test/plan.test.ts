@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {type ChunkLimits, type ChunkRange, fits, initialChunkRows, planRanges, RowTooLargeError, shrinkRows} from '../src/plan.ts';
+import {type ChunkLimits, type ChunkRange, fits, initialChunkRows, planRanges, RowTooLargeError, sampleCosts, shrinkRows} from '../src/plan.ts';
 
 // A small seeded generator, so a failing shape can be replayed from its seed.
 function randomGenerator(seed: number) {
@@ -70,6 +70,12 @@ test('maxRows caps the chunk size below what the limits allow', () => {
 	assert.equal(initialChunkRows(2, {maxParams: 32_766}), 16_383);
 	assert.equal(initialChunkRows(0, {maxParams: 100}), 100);
 	assert.equal(initialChunkRows(500, {maxParams: 100}), 1);
+	assert.equal(initialChunkRows(2, {maxParams: 20}, 1), 9);
+});
+
+test('sample costs split into per-row and per-statement parameters', () => {
+	assert.deepEqual(sampleCosts({params: 3, sqlLength: 0}, {params: 5, sqlLength: 0}), {rowParams: 2, statementParams: 1});
+	assert.deepEqual(sampleCosts({params: 3, sqlLength: 0}, undefined), {rowParams: 3, statementParams: 0});
 });
 
 test('a row too large on its own fails with its index and size before anything else is planned', () => {
