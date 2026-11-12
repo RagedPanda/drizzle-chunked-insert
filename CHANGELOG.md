@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-12
+
 ### Changed
 
 - Releases are published from GitHub Actions with npm trusted publishing, so no long-lived npm token exists that could publish a tampered version. Every version still carries a provenance attestation linking it to the commit it was built from ([#11](https://github.com/RagedPanda/drizzle-chunked-insert/pull/11) by [@RagedPanda](https://github.com/RagedPanda)).
@@ -22,5 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Limits are detected for node-postgres, postgres.js, mysql2 and node:sqlite as well, and each is tested against a real server. postgres.js gets 65,533 parameters, not Postgres's 65,535, because it refuses 65,534 or more before sending.
 - `insertInChunks(db, table, rows)` plans plain rows by counting their parameters instead of compiling every chunk, so it runs about as fast as hand-rolled fixed-size chunks. Rows with `sql` values, custom column types, Cloudflare's statement-length limit and the build-callback form are still measured by compiling.
 
-[Unreleased]: https://github.com/RagedPanda/drizzle-chunked-insert/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/RagedPanda/drizzle-chunked-insert/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/RagedPanda/drizzle-chunked-insert/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/RagedPanda/drizzle-chunked-insert/releases/tag/v0.1.0
