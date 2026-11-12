@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.tgz
+.tmp/
+coverage/
+
+# Graphify outputs
+graphify-out/

@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Check the tag matches package.json
+        run: |
+          node -e "const {version} = JSON.parse(require('fs').readFileSync('package.json', 'utf8')); if ('v' + version !== process.env.GITHUB_REF_NAME) { console.error('Tag ' + process.env.GITHUB_REF_NAME + ' does not match package.json version ' + version); process.exit(1); }"
+      - name: Read the release notes from CHANGELOG.md
+        run: node scripts/release-notes.ts "${GITHUB_REF_NAME#v}" > "$RUNNER_TEMP/release-notes.md"
+      - run: npm ci --ignore-scripts
+      # Uses npm trusted publishing (OIDC) once it is set up on npmjs.com, which npm only allows after the
+      # first publish; until then the NPM_TOKEN secret publishes. A version already on npm is skipped, so a
+      # tag for a version published by hand, or a re-run, still creates the GitHub release.
+      - name: Publish to npm
+        run: |
+          if npm view "drizzle-chunked-insert@${GITHUB_REF_NAME#v}" version > /dev/null 2>&1; then
+            echo "drizzle-chunked-insert@${GITHUB_REF_NAME#v} is already on npm, skipping"
+          else
+            npm publish --provenance --access public
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Create the GitHub release
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/release-notes.md" --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}

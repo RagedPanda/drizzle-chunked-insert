@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [22, 24]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # better-sqlite3 bundles prebuilt binaries but still ships a binding.gyp, so npm 10 (Node 22)
+      # runs node-gyp rebuild for it, which fails on Windows runners. Nothing here needs an install script.
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  drizzle-versions:
+    # The oldest supported release, the current one, and the 1.0 release candidate.
+    strategy:
+      matrix:
+        orm: [0.36.4, 0.45.4, 1.0.0-rc.5]
+    name: drizzle-orm ${{ matrix.orm }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci --ignore-scripts
+      - run: npm install --no-save --ignore-scripts drizzle-orm@${{ matrix.orm }}
+      - run: npm test
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci --ignore-scripts
+      # Fails the job if line, branch or function coverage drops below 100%.
+      - run: npm run coverage
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      # Checks that the ESM and CommonJS builds each resolve with their own types.
+      - run: npx --yes @arethetypeswrong/cli@0.18.5 --pack
