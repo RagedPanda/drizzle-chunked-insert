@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {type ChunkLimits, type ChunkRange, fits, initialChunkRows, planRanges, RowTooLargeError, sampleCosts, shrinkRows} from '../src/plan.ts';
+import {type ChunkLimits, type ChunkRange, fits, initialChunkRows, planRanges, RowTooLargeError, sampleCosts, shrinkRows, validateLimits} from '../src/plan.ts';
 
 // A small seeded generator, so a failing shape can be replayed from its seed.
 function randomGenerator(seed: number) {
@@ -76,6 +76,8 @@ test('maxRows caps the chunk size below what the limits allow', () => {
 test('sample costs split into per-row and per-statement parameters', () => {
 	assert.deepEqual(sampleCosts({params: 3, sqlLength: 0}, {params: 5, sqlLength: 0}), {rowParams: 2, statementParams: 1});
 	assert.deepEqual(sampleCosts({params: 3, sqlLength: 0}, undefined), {rowParams: 3, statementParams: 0});
+	// A second row with more columns set than the first would make the statement cost negative.
+	assert.deepEqual(sampleCosts({params: 2, sqlLength: 0}, {params: 5, sqlLength: 0}), {rowParams: 3, statementParams: 0});
 });
 
 test('a row too large on its own fails with its index and size before anything else is planned', () => {
@@ -127,5 +129,12 @@ test('random row shapes never produce a chunk over the limits and keep every row
 			assert.ok(fits(measure(range.start, range.end), limits), `seed ${seed}: chunk ${range.start}-${range.end} is over the limits`);
 			assert.ok(range.end - range.start <= (limits.maxRows ?? rowCount), `seed ${seed}: chunk ${range.start}-${range.end} has more than maxRows rows`);
 		}
+	}
+});
+
+test('limits must be positive whole numbers', () => {
+	assert.deepEqual(validateLimits({maxParams: 100, maxSqlLength: 1000, maxRows: 5}), {maxParams: 100, maxSqlLength: 1000, maxRows: 5});
+	for (const value of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 2 ** 53]) {
+		assert.throws(() => validateLimits({maxRows: value}), {name: 'RangeError', message: `maxRows must be a positive whole number, got ${value}.`});
 	}
 });
