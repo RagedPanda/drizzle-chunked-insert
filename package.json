@@ -1,6 +1,6 @@
 {
 	"name": "drizzle-chunked-insert",
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"description": "Insert any number of rows with Drizzle ORM: splits them into statements that fit each driver's bound-parameter limit (D1, SQLite, Postgres, MySQL) and writes them all or none",
 	"license": "MIT",
 	"author": "Ankur Dubey (https://github.com/RagedPanda)",
