@@ -55,10 +55,13 @@
 		"drizzle-orm": ">=0.36.4"
 	},
 	"devDependencies": {
+		"@electric-sql/pglite": "^0.5.16",
+		"@libsql/client": "^0.18.0",
 		"@types/better-sqlite3": "^9.6.0",
 		"@types/node": "^26.6.6",
 		"better-sqlite3": "^13.1.1",
 		"drizzle-orm": "0.45.4",
+		"miniflare": "^4.20260730.0",
 		"typescript": "^7.0.2"
 	}
 }
