@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-12
+
 ### Added
 
 - `insertInChunks(db, table, rows)` inserts any number of rows in as few statements as the driver's bound-parameter and statement-length limits allow, and all-or-nothing by default: one transaction, or one `db.batch` on D1, libsql and neon-http. Called with a transaction, it runs inside it. Pass `atomic: false` to commit chunk by chunk; a failure then throws `ChunkedInsertError` with the rows already inserted, so you can resume.
@@ -16,4 +18,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Limits are detected for node-postgres, postgres.js, mysql2 and node:sqlite as well, and each is tested against a real server. postgres.js gets 65,533 parameters, not Postgres's 65,535, because it refuses 65,534 or more before sending.
 - `insertInChunks(db, table, rows)` plans plain rows by counting their parameters instead of compiling every chunk, so it runs about as fast as hand-rolled fixed-size chunks. Rows with `sql` values, custom column types, Cloudflare's statement-length limit and the build-callback form are still measured by compiling.
 
-[Unreleased]: https://github.com/RagedPanda/drizzle-chunked-insert/commits/main
+[Unreleased]: https://github.com/RagedPanda/drizzle-chunked-insert/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/RagedPanda/drizzle-chunked-insert/releases/tag/v0.1.0
